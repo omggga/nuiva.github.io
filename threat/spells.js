@@ -39,6 +39,7 @@ const buffNames = {
 	9634: "Dire Bear Form",
 	768: "Cat Form",
 	25780: "Righteous Fury",
+	28880: "Gift of the Naaru"
 }
 
 const buffMultipliers = {
@@ -47,7 +48,7 @@ const buffMultipliers = {
 	25909: getThreatCoefficient(0.8),		// Tranquil Air Totem Aura
 	71:    getThreatCoefficient(1.3),		// Defensive Stance
 	2457:  getThreatCoefficient(0.8),		// Battle Stance
-	2458:  getThreatCoefficient(0.8),		// Berserker Stance
+	2458:  getThreatCoefficient(0.8),		// Berserker Stance, no way to check "Improved Berserker Stance" talant, so lets calculate as default
 	5487:  getThreatCoefficient(1.3),		// Bear Form
 	9634:  getThreatCoefficient(1.3),		// Dire Bear Form
 	768:   getThreatCoefficient(0.71),		// Cat Form
@@ -366,6 +367,15 @@ function handler_castCanMiss(threatValue) {
 			threatFunctions.sourceThreatenTarget(ev, fight, -threatValue);
 		}
     }
+}
+
+function handler_devastate() {
+    return (ev, fight) => {
+		if (ev.type !== "damage" || ev.hitType > 6 || ev.hitType === 0) return;
+		let threatValue;
+		debugger
+		threatFunctions.sourceThreatenTarget(ev, fight, ev.amount + (ev.absorbed || 0) + threatValue);
+	}
 }
 
 function handler_castCanMissNoCoefficient(threatValue) {
@@ -758,24 +768,43 @@ const spellFunctions = {
         11374: handler_threatOnDebuff(90, "Gift of Arthas"),
         /* Damage/Weapon Procs */
         20007: handler_zero, //("Heroic Strength (Crusader)"),
-        18138: handler_damage, //("Shadow Bolt (Deathbringer Proc)"),
+		18138: handler_damage, //("Shadow Bolt (Deathbringer Proc)"),
         24388: handler_damage, //("Brain Damage (Lobotomizer Proc)"),
         23267: handler_damage, //("Firebolt (Perdition's Proc)"),
         18833: handler_damage, //("Firebolt (Alcor's Proc)"),
-        
-        21992: threatFunctions.concat(handler_damage, handler_threatOnDebuff(90)), // Thunderfury
-        27648: handler_threatOnDebuff(145, "Thunderfury"),
+        28093: handler_zero, //Mongoose,
+        42976: handler_zero, //Executioner
+        28005: handler_zero, //Battlemaster, Flags: Generates no threat
+        27996: handler_zero, //Spellsurge
+        46629: handler_damage, //Deathfrost
+
+        21992: threatFunctions.concat(handler_modDamage(0.5), handler_threatOnDebuff(63)), // Thunderfury
+        27648: handler_threatOnDebuff(0, "Thunderfury"), //Tbc fixed https://github.com/magey/tbc-warrior/wiki/Threat-Values
         
         /* Thorn Effects */
-         9910: handler_damage, //("Thorns"),  //Thorns (Rank 6)
+        9910: handler_damage, //("Thorns"),  //Thorns (Rank 6)
+        26992: handler_damage, //("Thorns"),  //Thorns (Rank 7)
         17275: handler_damage, //("Heart of the Scale"), //Heart of the Scale
-        22600: handler_damage, //("Force Reactive Disk"), //Force Reactive
-        11350: handler_zero, //("Oil of Immolation"),   //Oil of Immolation (buff)
+        11350: handler_zero, //("	"),   //Oil of Immolation (buff)
         11351: handler_damage, //("Oil of Immolation"), //Oil of Immolation (dmg)
         
         /* Explosives */
         13241: handler_damage, //("Goblin Sapper Charge"), //Goblin Sapper Charge
-    
+        //30552: handler_damage, // Mana Potion Injector
+    	30486: handler_damage, //Super Sapper Charge
+    	39965: handler_damage, //Frost Grenades
+    	30217: handler_damage, //Adamantite Grenade
+    	30461: handler_damage, //The Bigger One
+    	19821: handler_damage, //Arcane Bomb
+    	30216: handler_damage, //Fel Iron Bomb
+    	46567: handler_damage, //Rocket Launch
+    	30527: handler_damage, //Flame cannon. Need tests.
+
+    	/ * Drums, dont know threat values */
+    	35475: handler_zero, //Drums of War
+		35476: handler_zero, //Drums of Battle
+		35477: handler_zero, //Drums of Speed
+		35478: handler_zero, //Drums of Restoration
     
         /* Zero Threat Abilities */
 		71:    handler_zero,		// Defensive Stance
@@ -809,6 +838,8 @@ const spellFunctions = {
         23892: handler_damage, //("Bloodthirst"), //Rank 2
         23893: handler_damage, //("Bloodthirst"), //Rank 3
         23894: handler_damage, //("Bloodthirst"), //Rank 4
+        25251: handler_damage, //("Bloodthirst"), //Rank 5
+        30335: handler_damage, //("Bloodthirst"), //Rank 6
         23888: handler_zero, //("Bloodthirst"),   //Buff
         23885: handler_zero, //("Bloodthirst"),   //Buff
 		23891: handler_heal, // BT heal buff
@@ -823,22 +854,29 @@ const spellFunctions = {
         11566: handler_threatOnHit(137, "Heroic Strike"),
         11567: handler_threatOnHit(145, "Heroic Strike"),
         25286: handler_threatOnHit(175, "Heroic Strike"), // (AQ)
+        29707: handler_threatOnHit(194, "Heroic Strike"), // LVL 10
+        30324: handler_threatOnHit(214, "Heroic Strike"), // LVL 11, not tested threat value
      
         //Shield Slam
         23922: handler_threatOnHit(178, "Shield Slam (Rank 1)"), //Rank 1
         23923: handler_threatOnHit(203, "Shield Slam (Rank 2)"), //Rank 2
         23924: handler_threatOnHit(229, "Shield Slam (Rank 3)"), //Rank 3
         23925: handler_threatOnHit(254, "Shield Slam"), //Rank 4
+        25258: handler_threatOnHit(278, "Shield Slam"), //Rank 5
+        30356: handler_threatOnHit(305, "Shield Slam"), //Rank 6
      
 		// Shield Bash
 		72: handler_modDamagePlusThreat(1.5, 36),
 		1671: handler_modDamagePlusThreat(1.5, 96),
-		1672: handler_modDamagePlusThreat(1.5, 96), // THREAT UNKNOWN
+		1672: handler_modDamagePlusThreat(1.5, 156), //source https://docs.google.com/spreadsheets/d/19uCf8i6jhHSA3gmTkOoa3d9_RhrIEbvT7QP4q0wRBUo/edit#gid=1828897856
+		29704: handler_modDamagePlusThreat(1.5, 192),
 
         //Revenge
-        11601: handler_modDamagePlusThreat(2.25, 243), //Rank 5
-        25288: handler_modDamagePlusThreat(2.25, 270), //Rank 6 (AQ)
-        12798: handler_zero, //("Revenge Stun"),           //Revenge Stun
+        11601: handler_modDamagePlusThreat(1, 150), //Rank 5
+        25288: handler_modDamagePlusThreat(1, 175), //Rank 6 (AQ)
+        25269: handler_modDamagePlusThreat(1, 186), //Rank 7
+        30357: handler_modDamagePlusThreat(1, 200), //Rank 8
+        12798: handler_threatOnDebuff(20), //("Revenge Stun"),           //Revenge Stun
      
         //Cleave
           845: handler_threatOnHit(10, "Cleave"),  //Rank 1
@@ -846,21 +884,25 @@ const spellFunctions = {
         11608: handler_threatOnHit(60, "Cleave"),  //Rank 3
         11609: handler_threatOnHit(70, "Cleave"),  //Rank 4
         20569: handler_threatOnHit(100, "Cleave"), //Rank 5
+        25231: handler_threatOnHit(125, "Cleave"), //Rank 6
      
         //Whirlwind
-         1680: handler_modDamage(1.25), //("Whirlwind"), //Whirlwind
-		6343: handler_modDamage(2.5), // Thunder Clap r1
-		8198: handler_modDamage(2.5), // Thunder Clap r2
-		8204: handler_modDamage(2.5), // Thunder Clap r3
-		8205: handler_modDamage(2.5), // Thunder Clap r4
-		11580: handler_modDamage(2.5), // Thunder Clap r5
-		11581: handler_modDamage(2.5), // Thunder Clap r6
+        1680: handler_modDamage(1.25), //("Whirlwind"), //Whirlwind
+		6343: handler_modDamage(1.75), // Thunder Clap r1
+		8198: handler_modDamage(1.75), // Thunder Clap r2
+		8204: handler_modDamage(1.75), // Thunder Clap r3
+		8205: handler_modDamage(1.75), // Thunder Clap r4
+		11580: handler_modDamage(1.75), // Thunder Clap r5
+		11581: handler_modDamage(1.75), // Thunder Clap r6
+		25264: handler_modDamage(1.75), // Thunder Clap r7
 
+		676: handler_threatOnDebuff(99), //Disarm
      
         //Hamstring
 		1715: handler_modDamagePlusThreat(1.25, 20), // R1
-		7372: handler_threatOnHit(101), // R2, from outdated sheet
-        7373: handler_threatOnHit(145, "Hamstring"),
+		7372: handler_modDamagePlusThreat(101), // r2
+        7373: handler_modDamagePlusThreat(1.25, 135), //r3
+        25212: handler_modDamagePlusThreat(1.25, 167), //r4
      
         //Intercept
         20252: handler_modDamage(2), //Intercept
@@ -869,30 +911,44 @@ const spellFunctions = {
         20614: handler_zero, //("Intercept Stun"),         //Intercept Stun (Rank 2)
         20617: handler_modDamage(2), //Intercept (Rank 3)
         20615: handler_zero, //("Intercept Stun"),         //Intercept Stun (Rank 3)
+        25275: handler_modDamage(2), //Intercept (Rank 5)
+        25274: handler_zero, //("Intercept Stun"),
      
         //Execute
-        20647: handler_modDamage(1.25, "Execute"),
+        20647: handler_modDamage(1.25, "Execute"), //r6
+        25236: handler_modDamage(1.25, "Execute"), //r7
      
         /* Abilities */
         //Sunder Armor
 		7386: handler_castCanMiss(45), // Rank 1
         11597: handler_castCanMiss(261, "Sunder Armor"), //Rank 5
+        25225: handler_castCanMiss(301, "Sunder Armor"), //Rank 6
      
         //Battleshout
         11551: handler_threatOnBuff(52, "Battle Shout"), //Rank 6
         25289: handler_threatOnBuff(60, "Battle Shout"), //Rank 7 (AQ)
+        2048: handler_threatOnBuff(69, "Battle Shout"), //Rank 8
+
+        //Devastate
+        30022: handler_devastate(),
+
+        //Commanding Shout
+        469: handler_threatOnBuff(68, "Commanding Shout"), //Rank 8
      
         //Demo Shout
         11556: handler_threatOnDebuff(43, "Demoralizing Shout"),
+        25203: handler_threatOnDebuff(56, "Demoralizing Shout"), //rank 7
      
         //Mocking Blow
         20560: threatFunctions.concat(handler_damage, handler_markSourceOnMiss(borders.taunt)), //("Mocking Blow"),
+		25266: threatFunctions.concat(handler_damage, handler_markSourceOnMiss(borders.taunt)), //("Mocking Blow"),
      
         //Overpower
         11585: handler_damage, //("Overpower"),
      
         //Rend
         11574: handler_damage, //("Rend"),
+        25208: handler_damage, //("Rend"), //r8
 
 
 
@@ -921,6 +977,8 @@ const spellFunctions = {
        12976: handler_zero, //("Last Stand (buff)"), //Last Stand (buff)
         2565: handler_zero, //("Shield Block"), //Shield Block
 
+        30032: handler_zero, //Rampage
+
 
         /* Consumable */
          6613: handler_zero, //("Great Rage Potion"), //Great Rage Potion
@@ -940,18 +998,25 @@ const spellFunctions = {
          9745: handler_modDamage(1.75, "Maul (Rank 5)"),
          9880: handler_modDamage(1.75, "Maul (Rank 6)"),
          9881: handler_modDamage(1.75, "Maul"),
+         26996: handler_threatOnHit(322, "Maul 8"), //https://zidnae.gitlab.io/tbc-armor-penetration-calc/tbc_bear_tc.html
 
           779: handler_modDamage(1.75, "Swipe (Rank 1)"),
           780: handler_modDamage(1.75, "Swipe (Rank 2)"),
           769: handler_modDamage(1.75, "Swipe (Rank 3)"),
          9754: handler_modDamage(1.75, "Swipe (Rank 4)"),
          9908: handler_modDamage(1.75, "Swipe"),
+         26997: handler_damage, //swipe 6
+
+         33987:handler_modDamage(1.3, "Mangle (Rank 3)"), //Mangle 3
+
+         33745: handler_threatOnHit(285, "Lacerate"),//Lacerate
 
            99: handler_threatOnDebuff(9, "Demoralizing Roar (Rank 1)"),
          1735: handler_threatOnDebuff(15, "Demoralizing Roar (Rank 2)"),
          9490: handler_threatOnDebuff(20, "Demoralizing Roar (Rank 3)"),
          9747: handler_threatOnDebuff(30, "Demoralizing Roar (Rank 4)"),
          9898: handler_threatOnDebuff(39, "Demoralizing Roar"),
+         26998: handler_threatOnDebuff(45, "Demoralizing Roar 6"),
 
          6795: threatFunctions.concat(handler_taunt, handler_markSourceOnMiss(borders.taunt)), //("Growl"),
          5229: handler_energize, //("Enrage"),
@@ -990,6 +1055,8 @@ const spellFunctions = {
          778: handler_threatOnDebuff(108, "Faerie Fire (Rank 2)"),
         9749: handler_threatOnDebuff(108, "Faerie Fire (Rank 3)"),
         9907: handler_threatOnDebuff(108, "Faerie Fire"),
+
+        26993: handler_threatOnDebuff(127, "Faerie Fire Rank 5"),
 
         16870: handler_zero, //("Clearcasting"),
         29166: handler_zero, //("Innervate"),
