@@ -369,12 +369,27 @@ function handler_castCanMiss(threatValue) {
     }
 }
 
+
+//No way to check target debuffs with current code structure
+let devastateCount = 0
 function handler_devastate() {
     return (ev, fight) => {
 		if (ev.type !== "damage" || ev.hitType > 6 || ev.hitType === 0) return;
-		let threatValue;
-		debugger
+		let threatValue = 100;
+		if (devastateCount < 5) {
+			threatValue += 301
+			devastateCount++
+		}
 		threatFunctions.sourceThreatenTarget(ev, fight, ev.amount + (ev.absorbed || 0) + threatValue);
+	}
+}
+
+function handler_expose(){
+	return (ev, fight) => {
+		let t = ev.type;
+		if (t !== "applydebuff" && t !== "refreshdebuff") return;
+		//prevent some devastate threat
+		devastateCount = 5
 	}
 }
 
@@ -652,6 +667,7 @@ const spellFunctions = {
 8637: handler_castCanMissNoCoefficient(-390), // Feint r3
 11303: handler_castCanMissNoCoefficient(-600), // Feint r4
 25302: handler_castCanMissNoCoefficient(-800), // Feint r5
+26866: handler_expose()
 
 // Priest
 6788: handler_zero, // Weakened Soul
@@ -800,7 +816,7 @@ const spellFunctions = {
     	46567: handler_damage, //Rocket Launch
     	30527: handler_damage, //Flame cannon. Need tests.
 
-    	/ * Drums, dont know threat values */
+    	/* Drums, dont know threat values */
     	35475: handler_zero, //Drums of War
 		35476: handler_zero, //Drums of Battle
 		35477: handler_zero, //Drums of Speed
